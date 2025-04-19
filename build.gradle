@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '9.0.0-beta12'
+}
+
+group = 'de.catstorm.ThorildsbyBot'
+version = '0.1'
+
+repositories {
+    mavenCentral()
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'de.catstorm.ThorildsbyBot.Main'
+    }
+}
+
+dependencies {
+    implementation("net.dv8tion:JDA:5.3.2")
+}
