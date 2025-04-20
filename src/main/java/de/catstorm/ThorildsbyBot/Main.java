@@ -58,7 +58,7 @@ public class Main {
 
     @SubscribeEvent
     public void onMessageReceive(MessageReceivedEvent event) {
-        String regex = "\\*\\*.+\\*\\* [*_]@[a-zA-Z0-9]+[*_]\n.*";
+        String regex = "\\*\\*.+\\*\\* [*_]@[a-zA-Z0-9]+[*_]\n[\\s\\S]*";
 
         if (event.getChannel().getId().equals(chirperID) && !event.getMessage().getContentRaw().matches(regex)) {
             event.getMessage().createThreadChannel("Miscounts detected").queue(threadChannel -> threadChannel.sendMessage("""
