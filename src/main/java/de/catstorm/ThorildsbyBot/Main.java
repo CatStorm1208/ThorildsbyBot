@@ -8,9 +8,7 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-
 import java.io.IOException;
-import java.nio.channels.Channel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -63,9 +61,11 @@ public class Main {
         String regex = "\\*\\*.+\\*\\* [*_]@[a-zA-Z0-9]+[*_]\n.*";
 
         if (event.getChannel().getId().equals(chirperID) && !event.getMessage().getContentRaw().matches(regex)) {
-            event.getMessage().createThreadChannel("Miscounts detected").queue(threadChannel -> threadChannel.sendMessage("**Chirper Police** @Chirperpol\n" +
-                "We have detected incorrect formatting in your chirper post. Please read the pinned message for proper formatting. The admin-team will be informed.\n\n" +
-                "*This message was sent automatically. If you believe this to be a mistake, please contact a server admin.*").queue());
+            event.getMessage().createThreadChannel("Miscounts detected").queue(threadChannel -> threadChannel.sendMessage("""
+                **Chirper Police** *@Chirperpol*
+                We have detected incorrect formatting in your chirper post. Please read the pinned message for proper formatting. The admin-team will be informed.
+
+                *This message was sent automatically. If you believe this to be a mistake, please contact a server admin.*""").queue());
             event.getMessage().forwardTo(Objects.requireNonNull(event.getGuild().getTextChannelById(ownerOnlyID))).queue();
         }
     }
