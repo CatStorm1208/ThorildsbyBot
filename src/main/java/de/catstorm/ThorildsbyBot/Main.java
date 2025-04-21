@@ -2,6 +2,7 @@ package de.catstorm.ThorildsbyBot;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
@@ -13,7 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "CallToPrintStackTrace"})
 public class Main {
     public static String messageID;
     public static String roleID = "1363262935182344333";
@@ -59,14 +60,28 @@ public class Main {
     @SubscribeEvent
     public void onMessageReceive(MessageReceivedEvent event) {
         String regex = "\\*\\*.+\\*\\* [*_]@[a-zA-Z0-9]+[*_]\n[\\s\\S]*";
-
-        if (event.getChannel().getId().equals(chirperID) && !event.getMessage().getContentRaw().matches(regex)) {
-            event.getMessage().createThreadChannel("Miscounts detected").queue(threadChannel -> threadChannel.sendMessage("""
+        String chirperpolText = """
                 **Chirper Police** *@Chirperpol*
                 We have detected incorrect formatting in your chirper post. Please read the pinned message for proper formatting. The admin-team will be informed.
 
-                *This message was sent automatically. If you believe this to be a mistake, please contact a server admin.*""").queue());
+                *This message was sent automatically. If you believe this to be a mistake, please contact a server admin.*""";
+
+        if (event.getChannel().getId().equals(chirperID) && !event.getMessage().getContentRaw().matches(regex)) {
+            event.getMessage().createThreadChannel("Miscounts detected").queue(threadChannel ->
+                threadChannel.sendMessage(chirperpolText).queue());
             event.getMessage().forwardTo(Objects.requireNonNull(event.getGuild().getTextChannelById(ownerOnlyID))).queue();
+        }
+
+        try {
+            if(event.getChannel().getType().isThread() &&
+                ((ThreadChannel) event.getChannel()).getParentChannel().getId().equals(chirperID) &&
+                !event.getMessage().getContentRaw().matches(regex)) {
+                event.getMessage().reply(chirperpolText).queue();
+                event.getMessage().forwardTo(Objects.requireNonNull(event.getGuild().getTextChannelById(ownerOnlyID))).queue();
+            }
+        }
+        catch (Exception e) {
+            //lol
         }
     }
 }

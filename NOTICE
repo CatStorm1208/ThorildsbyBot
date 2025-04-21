@@ -1,0 +1,10 @@
+Thorildsby Bot
+Copyright 2025 CatStorm
+
+For handling interactions on Discord I used
+Java Discord API (JDA)
+Copyright 2015 Austin Keener, Michael Ritter, Florian Spieß, and the JDA contributors
+
+In order to create a single .jar which combines all dependencies I used
+Shadowjar
+Copyright Gradleup(?), unknown year
