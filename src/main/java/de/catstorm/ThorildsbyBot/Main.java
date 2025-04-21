@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +25,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         JDA jda = JDABuilder.createDefault(Files.readString(Path.of("./token")).split("\\s")[0])
             .setEventManager(new AnnotatedEventManager())
-            .enableIntents(GatewayIntent.MESSAGE_CONTENT)
+            .enableIntents(GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MESSAGES)
             .addEventListeners(new Main()).build();
         messageID = args[0].split("\\s")[0];
     }
@@ -48,7 +49,7 @@ public class Main {
         try {
             if (event.getMessageId().equals(messageID) &&
                 event.getEmoji().asUnicode().toString().equals("UnicodeEmoji(codepoints=U+1f525)")) {
-                event.getGuild().removeRoleFromMember(Objects.requireNonNull(event.getMember()),
+                event.getGuild().removeRoleFromMember(event.retrieveMember().complete(),
                     Objects.requireNonNull(event.getGuild().getRoleById(roleID))).queue();
             }
         }
