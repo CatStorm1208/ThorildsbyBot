@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,7 +59,7 @@ public class Main {
 
     @SubscribeEvent
     public void onMessageReceive(MessageReceivedEvent event) {
-        String regex = "\\*\\*.+\\*\\* [*_]@[a-zA-Z0-9]+[*_]\n[\\s\\S]*";
+        String regex = "\\*\\*.+\\*\\* [*_]?(_?<)?@[a-zA-Z0-9]+(>_?)?[*_]?\\s?\n[\\s\\S]*";
         String chirperpolText = """
                 **Chirper Police** *@Chirperpol*
                 We have detected incorrect formatting in your chirper post. Please read the pinned message for proper formatting. The admin-team will be informed.
