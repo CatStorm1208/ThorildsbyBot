@@ -8,3 +8,7 @@ Copyright 2015 Austin Keener, Michael Ritter, Florian Spieß, and the JDA contri
 In order to create a single .jar which combines all dependencies I used
 Shadowjar
 Copyright Gradleup(?), unknown year
+
+For handling JSON serialisation I used
+GSON
+Copyright Google 2025
