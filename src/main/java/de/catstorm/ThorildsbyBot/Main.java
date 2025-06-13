@@ -6,16 +6,18 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionRemoveEvent;
 import net.dv8tion.jda.api.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.api.hooks.SubscribeEvent;
+import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import org.json.JSONObject;
-
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,7 +31,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
 
-@SuppressWarnings({"unused", "CallToPrintStackTrace", "deprecation"})
+@SuppressWarnings({"unused", "CallToPrintStackTrace", "deprecation", "ResultOfMethodCallIgnored"})
 public class Main {
     public static String messageID;
     public static String roleID = "1363262935182344333";
@@ -39,6 +41,7 @@ public class Main {
     public static URLConnection sightEngineConnection;
     public static HttpURLConnection sightEngineHTTP;
     public static Gson gson = new Gson();
+    public static HashMap<String, Boolean> lockedDownChannels = new HashMap<>();
 
     public static void main(String[] args) throws IOException {
         JDA jda = JDABuilder.createDefault(Files.readString(Path.of("./token")).split("\\s")[0])
@@ -48,6 +51,19 @@ public class Main {
         messageID = args[0].split("\\s")[0];
 
         sightEngineURL = new URL("https://api.sightengine.com/1.0/check.json");
+    }
+
+    @SubscribeEvent
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        if (event.getName().equals("lockdown")) {
+            //noinspection DataFlowIssue
+            var mediaOnly = event.getOption("mediaOnly").getAsBoolean();
+            lockedDownChannels.put(event.getChannel().getId(), mediaOnly);
+            if (mediaOnly) event.getChannel().sendMessage("This channel is now locked-down for messages containing any media." +
+                "\n\n**ANY FURTHER MESSAGES CONTAINING IMAGES, GIFS OR VIDEOS WILL BE DELETED**");
+            else event.getChannel().sendMessage("This channel is now locked-down for moderation purposes." +
+                "\n\n**ANY FURTHER MESSAGES WILL BE DELETED**");
+        }
     }
 
     @SubscribeEvent
@@ -80,6 +96,24 @@ public class Main {
 
     @SubscribeEvent
     public void onMessageReceive(MessageReceivedEvent event) {
+        //Lockdown handling
+        if (!Objects.requireNonNull(event.getMember()).getPermissions().contains(Permission.MODERATE_MEMBERS))
+            if (lockedDownChannels.containsKey(event.getChannel().getId()))
+                if (!lockedDownChannels.get(event.getChannel().getId())) event.getMessage().delete().queue();
+                else if (!event.getMessage().getAttachments().isEmpty()) event.getMessage().delete().queue();
+
+        //Command registering
+        if (event.getMessageId().equals(ownerOnlyID) &&
+            event.getMessage().getContentRaw().equals("!ThorildsbyBotLoadCommands")) {
+            event.getGuild().updateCommands().addCommands(
+                Commands.slash("lockdown", "Locks down the current channel")
+                    .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MODERATE_MEMBERS))
+                    .addOption(OptionType.BOOLEAN, "mediaOnly", "Should this lockdown only apply to media?"),
+                Commands.slash("Unlock", "Removes this channel's lockdown")
+                    .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MODERATE_MEMBERS))
+            );
+        }
+
         //Chirper Police
         String regex = "\\*\\*.+\\*\\* [*_]?(_?<)?@[a-zA-Z0-9]+(>_?)?[*_]?\\s?\n[\\s\\S]*";
         String chirperpolText = """
