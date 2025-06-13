@@ -55,14 +55,20 @@ public class Main {
 
     @SubscribeEvent
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        if (event.getName().equals("lockdown")) {
-            //noinspection DataFlowIssue
-            var mediaOnly = event.getOption("mediaOnly").getAsBoolean();
-            lockedDownChannels.put(event.getChannel().getId(), mediaOnly);
-            if (mediaOnly) event.getChannel().sendMessage("This channel is now locked-down for messages containing any media." +
-                "\n\n**ANY FURTHER MESSAGES CONTAINING IMAGES, GIFS OR VIDEOS WILL BE DELETED**");
-            else event.getChannel().sendMessage("This channel is now locked-down for moderation purposes." +
-                "\n\n**ANY FURTHER MESSAGES WILL BE DELETED**");
+        switch (event.getName()) {
+            case "lockdown" -> {
+                //noinspection DataFlowIssue
+                var mediaOnly = event.getOption("mediaonly").getAsBoolean();
+                lockedDownChannels.put(event.getChannel().getId(), mediaOnly);
+                if (mediaOnly) event.reply("This channel is now locked-down for messages containing any media." +
+                    "\n\n**ANY FURTHER MESSAGES CONTAINING IMAGES, GIFS OR VIDEOS WILL BE DELETED**").queue();
+                else event.reply("This channel is now locked-down for moderation purposes." +
+                    "\n\n**ANY FURTHER MESSAGES WILL BE DELETED**").queue();
+            }
+            case "unlock" -> {
+                lockedDownChannels.remove(event.getChannel().getId());
+                event.reply("This channel is no longer locked down, all messaging can resume normally!").queue();
+            }
         }
     }
 
@@ -103,15 +109,15 @@ public class Main {
                 else if (!event.getMessage().getAttachments().isEmpty()) event.getMessage().delete().queue();
 
         //Command registering
-        if (event.getMessageId().equals(ownerOnlyID) &&
+        if (event.getChannel().getId().equals(ownerOnlyID) &&
             event.getMessage().getContentRaw().equals("!ThorildsbyBotLoadCommands")) {
             event.getGuild().updateCommands().addCommands(
                 Commands.slash("lockdown", "Locks down the current channel")
                     .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MODERATE_MEMBERS))
-                    .addOption(OptionType.BOOLEAN, "mediaOnly", "Should this lockdown only apply to media?"),
-                Commands.slash("Unlock", "Removes this channel's lockdown")
+                    .addOption(OptionType.BOOLEAN, "mediaonly", "Should this lockdown only apply to media?", true),
+                Commands.slash("unlock", "Removes this channel's lockdown")
                     .setDefaultPermissions(DefaultMemberPermissions.enabledFor(Permission.MODERATE_MEMBERS))
-            );
+            ).queue();
         }
 
         //Chirper Police
