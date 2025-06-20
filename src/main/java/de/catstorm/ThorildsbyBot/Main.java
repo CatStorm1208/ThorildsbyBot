@@ -104,9 +104,12 @@ public class Main {
     public void onMessageReceive(MessageReceivedEvent event) {
         //Lockdown handling
         if (!Objects.requireNonNull(event.getMember()).getPermissions().contains(Permission.MODERATE_MEMBERS))
-            if (lockedDownChannels.containsKey(event.getChannel().getId()))
-                if (!lockedDownChannels.get(event.getChannel().getId())) event.getMessage().delete().queue();
-                else if (!event.getMessage().getAttachments().isEmpty()) event.getMessage().delete().queue();
+            if (lockedDownChannels.containsKey(event.getChannel().getId())) {
+                if (!lockedDownChannels.get(event.getChannel().getId()))
+                    event.getMessage().delete().queue();
+                else if (!event.getMessage().getEmbeds().isEmpty() || !event.getMessage().getAttachments().isEmpty())
+                    event.getMessage().delete().queue();
+            }
 
         //Command registering
         if (event.getChannel().getId().equals(ownerOnlyID) &&
@@ -147,64 +150,6 @@ public class Main {
         }
 
         //Image moderation
-        //Thx to Ferrybig on stackoverflow for explaining POST request in Java
-        boolean shouldForward = false;
-        try {
-            sightEngineConnection = sightEngineURL.openConnection();
-            sightEngineHTTP = (HttpURLConnection) sightEngineConnection;
-            sightEngineHTTP.setRequestMethod("POST");
-            sightEngineHTTP.setDoOutput(true);
-
-            for (var attachement : event.getMessage().getAttachments()) if (attachement.isImage()) {
-                Map<String,String> arguments = new HashMap<>();
-                arguments.put("url", attachement.getUrl());
-                arguments.put("models", "nudity-2.1,alcohol,recreational_drug,medical,offensive-2.0,scam,text-content,gore-2.0,qr-content,genai,self-harm");
-                arguments.put("api_user", "934535508");
-                arguments.put("api_secret", Files.readString(Path.of("./sightEngineSecret")));
-
-                StringJoiner sj = new StringJoiner("&");
-                for(Map.Entry<String,String> entry : arguments.entrySet())
-                    sj.add(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8) + "="
-                        + URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
-                byte[] out = sj.toString().getBytes(StandardCharsets.UTF_8);
-                int length = out.length;
-
-                sightEngineHTTP.setFixedLengthStreamingMode(length);
-                sightEngineHTTP.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                sightEngineHTTP.connect();
-                try(OutputStream os = sightEngineHTTP.getOutputStream()) {
-                    os.write(out);
-                }
-                try(InputStream is = sightEngineHTTP.getInputStream()) {
-                    Files.deleteIfExists(Path.of("./sightEngineOut.json"));
-
-                    //TODO: get this shit working somehow
-                    var jsonData = Arrays.toString(is.readAllBytes());
-                    try {
-                        SightEngineOut[] jsonOut = gson.fromJson(jsonData, SightEngineOut[].class);
-                        System.out.println(jsonOut[0].type.ai_generated);
-                    }
-                    catch (JsonSyntaxException e) {
-                        if (e.getMessage().equals("Expected BEGIN_OBJECT but was BEGIN_ARRAY")) {
-                            JsonArray jsonArray = new JsonParser().parse(jsonData).getAsJsonArray();
-                            for (int i = 0; i < jsonArray.size(); i++) {
-                                SightEngineOut jsonOut = gson.fromJson(jsonArray.get(i), SightEngineOut.class);
-
-                                if (jsonOut.type.ai_generated < 0.9 && jsonOut.type.ai_generated >= 0.5) shouldForward = true;
-                                else if (jsonOut.type.ai_generated >= 0.9) {
-                                    Objects.requireNonNull(event.getMember()).timeoutFor(Duration.ofMinutes(15)).queue();
-                                    System.out.println("Timed out: " + event.getMember().getNickname());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (shouldForward) event.getMessage().forwardTo(Objects.requireNonNull(event.getGuild().getTextChannelById(ownerOnlyID))).queue();
+        //TODO: ↑↑↑↑↑
     }
 }
